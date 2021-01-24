@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+ app:
+   build: ./infra/php
+   volumes:
+     - ./backend:/work:delegated
+
+ web:
+   build: ./infra/nginx
+   ports:
+     - 50080:80
+     - 443:443
+   volumes:
+     - ./backend:/work:delegated
+     - './certs:/etc/nginx/ssl'
+
+ db:
+   build: ./infra/mysql
+   volumes:
+     - db-store:/var/lib/mysql
+
+volumes:
+  db-store:
