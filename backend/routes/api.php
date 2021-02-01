@@ -18,12 +18,6 @@ Route::get('/user', function() {
   return Auth::user();
 })->name('user');
 
-Route::get('/refresh-token', function (Request $request) {
-  $request->session()->regenerateToken();
-
-  return response()->json();
-});
-
 Route::post('/register', 'Auth\RegisterController@register')->name('register');
 Route::post('/login', 'Auth\LoginController@login')->name('login');
 Route::post('/logout', 'Auth\LoginController@logout')->name('logout');
@@ -33,3 +27,10 @@ Route::post('/registerCard', 'Subscriptions\PaymentController@registerCard')->na
 Route::post('/changeDefaultCard', 'Subscriptions\PaymentController@changeDefaultCard')->name('changeDefaultCard');
 
 Route::post('/subscribePlan', 'Subscriptions\PaymentController@subscribePlan')->name('subscribePlan');
+Route::post('/changePlan', 'Subscriptions\PaymentController@changePlan')->name('changePlan');
+
+Route::get('/refresh-token', function (Request $request) {
+  $request->session()->regenerateToken();
+
+  return response()->json();
+});

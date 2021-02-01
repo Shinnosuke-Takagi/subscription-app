@@ -19,9 +19,19 @@
 
 <style scoped>
 .footer {
+  width: 100%;
   align-items: center;
   display: flex;
   justify-content: center;
+  position: absolute;
+  bottom: 0px;
+}
+.btn {
+  border-radius: 0px;
+  width: 100%;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 1.2rem;
 }
 </style>
 

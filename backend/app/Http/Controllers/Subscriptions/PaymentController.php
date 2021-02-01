@@ -14,25 +14,33 @@ class PaymentController extends Controller
         if(Auth::user()) {
             if(Auth::user()->hasDefaultPaymentMethod()) {
 
-              // ユーザーが登録済のカードを配列で取得する
-              $payment_methods = Auth::user()->paymentMethods()
-                                              ->map(function($paymentMethod) {
-                return $paymentMethod->asStripePaymentMethod();
-              });
+                if(Auth::user()->subscribed('default')) {
+                  $subscription = Auth::user()->subscriptions->first();
+                } else {
+                  $subscription = null;
+                }
 
-              // ユーザーがデフォルトに設定しているカード情報を取得する
-              $default_payment_method = Auth::user()->defaultPaymentMethod()
-                                              ->asStripePaymentMethod();
+                // ユーザーが登録済のカードを配列で取得する
+                $payment_methods = Auth::user()->paymentMethods()
+                                                ->map(function($paymentMethod) {
+                  return $paymentMethod->asStripePaymentMethod();
+                });
 
-              return [
-                'intent' => Auth::user()->createSetupIntent(),
-                'payment_methods' => $payment_methods,
-                'default_payment_method' => $default_payment_method,
-              ];
+                // ユーザーがデフォルトに設定しているカード情報を取得する
+                $default_payment_method = Auth::user()->defaultPaymentMethod()
+                                                ->asStripePaymentMethod();
+
+                return [
+                  'intent' => Auth::user()->createSetupIntent(),
+                  'subscription' => $subscription,
+                  'payment_methods' => $payment_methods,
+                  'default_payment_method' => $default_payment_method,
+                ];
+
             } else {
-              return [
-                'intent' => Auth::user()->createSetupIntent()
-              ];
+                return [
+                  'intent' => Auth::user()->createSetupIntent()
+                ];
             }
         } else {
           return null;
@@ -46,6 +54,10 @@ class PaymentController extends Controller
         // ユーザーが追加したカード情報を追加してデフォルトに設定する。
         $user->updateDefaultPaymentMethod($request->payment_method);
 
+        if($user->subscribed('default')) {
+            $subscription = $user->subscriptions->first();
+        }
+
         $payment_methods = Auth::user()->paymentMethods()
                                         ->map(function($paymentMethod) {
           return $paymentMethod->asStripePaymentMethod();
@@ -56,6 +68,7 @@ class PaymentController extends Controller
 
          return [
            'user' => $user,
+           'subscription' => $subscription,
            'payment_methods' => $payment_methods,
            'default_payment_method' => $default_payment_method,
          ];
@@ -74,6 +87,10 @@ class PaymentController extends Controller
         // ユーザーの追加済のカード情報を上で取得して、デフォルトに設定する
         $user->updateDefaultPaymentMethod($payment_method);
 
+        if($user->subscribed('default')) {
+            $subscription = $user->subscriptions->first();
+        }
+
         $payment_methods = Auth::user()->paymentMethods()
                                         ->map(function($paymentMethod) {
           return $paymentMethod->asStripePaymentMethod();
@@ -84,53 +101,69 @@ class PaymentController extends Controller
 
         return [
           'user' => $user,
+          'subscription' => $subscription,
           'payment_methods' => $payment_methods,
           'default_payment_method' => $default_payment_method,
         ];
     }
 
+    // サブスクリプションに加入する
     public function subscribePlan(Request $request)
     {
         $user = Auth::user();
 
         $plan_id = Arr::get(config('services.stripe_plan'), $request->plan);
 
+        // ユーザーのカード情報から、$plan_idが一致するプランに加入させる
         $user->newSubscription('default', $plan_id)->add();
+
+        if($user->subscribed('default')) {
+            $subscription = $user->subscriptions->first();
+        }
+
+        $payment_methods = Auth::user()->paymentMethods()
+                                        ->map(function($paymentMethod) {
+          return $paymentMethod->asStripePaymentMethod();
+        });
+
+        $default_payment_method = Auth::user()->defaultPaymentMethod()
+                                        ->asStripePaymentMethod();
 
         return [
           'user' => $user,
-          'subscriptions' => $user->subscriptions->first(),
+          'subscription' => $subscription,
+          'payment_methods' => $payment_methods,
+          'default_payment_method' => $default_payment_method,
         ];
     }
 
     // プラン変更する「ベーシック」「プレミアム」などの
     public function changePlan(Request $request)
     {
-        // ユーザーをrequestから取得する
-        $user = $request->user();
+        $user = Auth::user();
 
-        // プランIDをrequestから取得する
-        $plan = $request->plan;
+        $plan_id = Arr::get(config('services.stripe_plan'), $request->plan);
 
-        // ユーザーのサブスクリプション情報を取得して、新しいプラン
-        // (request->plan)へと変更(swap)する
-        $user->subscription('main')->swap($plan);
+        // ユーザーのカード情報から、$plan_idが一致するプランに加入させる
+        $user->subscription('default')->swap($plan_id);
 
-        // ユーザーのサブスクリプション情報の取得
-        $subscription = $user->subscriptions->first();
+        if($user->subscribed('default')) {
+            $subscription = $user->subscriptions->first();
+        }
 
-        // planの取得(configに登録されているプランの中から、
-          // ユーザーのサブスクリプション情報に含まれているプランIDを使って、
-          // 文字列「ベーシック」「プレミアム」の中から取得する)
-        // card_last_fourの取得(ユーザーテーブルのcard_last_fourカラムを取得)
-        $details = [
-          'plan' => Arr::get(config('services.stripe.plans'), $subscription['stripe_plan']),
-          'card_last_four' => $user->card_last_four,
-        ];
+        $payment_methods = Auth::user()->paymentMethods()
+                                        ->map(function($paymentMethod) {
+          return $paymentMethod->asStripePaymentMethod();
+        });
 
-        // detailsにまとめて、responseとして返す
+        $default_payment_method = Auth::user()->defaultPaymentMethod()
+                                        ->asStripePaymentMethod();
+
         return [
-          'details' => $details
+          'user' => $user,
+          'subscription' => $subscription,
+          'payment_methods' => $payment_methods,
+          'default_payment_method' => $default_payment_method,
         ];
     }
 

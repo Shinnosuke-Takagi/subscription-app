@@ -6,12 +6,14 @@ const state = {
   paymentMethods: null,
   defaultPaymentMethod: null,
   apiStatus: null,
+  subscription: null,
 }
 
 const getters = {
   hasDefaultPaymentMethod: state => !! state.defaultPaymentMethod,
   clientSecret: state => state.intent ? state.intent.client_secret : null,
   paymentMethodId: state => state.defaultPaymentMethod ? state.defaultPaymentMethod.id : null,
+  planId: state => state.subscription ? state.subscription.stripe_plan : null,
 }
 
 const mutations = {
@@ -27,6 +29,9 @@ const mutations = {
   setApiStatus (state, status) {
     state.apiStatus = status
   },
+  setSubscription (state, subscription) {
+    state.subscription = subscription
+  }
 }
 
 const actions = {
@@ -39,6 +44,7 @@ const actions = {
       context.commit('setIntent', response.data.intent || null)
       context.commit('setPaymentMethods', response.data.payment_methods || null)
       context.commit('setDefaultPaymentMethod', response.data.default_payment_method || null)
+      context.commit('setSubscription', response.data.subscription || null)
       return false
     }
 
@@ -57,6 +63,7 @@ const actions = {
       context.commit('setPaymentMethods', response.data.payment_methods)
       context.commit('setDefaultPaymentMethod', response.data.default_payment_method)
       context.commit('auth/setUser', response.data.user, { root:true })
+      context.commit('setSubscription', response.data.subscription || null)
       return false
     }
 
@@ -74,6 +81,7 @@ const actions = {
       context.commit('setPaymentMethods', response.data.payment_methods)
       context.commit('setDefaultPaymentMethod', response.data.default_payment_method)
       context.commit('auth/setUser', response.data.user, { root:true })
+      context.commit('setSubscription', response.data.subscription || null)
       return false
     }
 
@@ -84,8 +92,35 @@ const actions = {
   async subscribePlan (context, data) {
     const response = await axios.post('/api/subscribePlan', data)
 
-    console.log(response)
+    if(response.status === OK) {
+      context.commit('setApiStatus', true)
+      context.commit('setPaymentMethods', response.data.payment_methods)
+      context.commit('setDefaultPaymentMethod', response.data.default_payment_method)
+      context.commit('auth/setUser', response.data.user, { root:true })
+      context.commit('setSubscription', response.data.subscription || null)
+      return false
+    }
+
+    context.commit('setApiStatus', false)
+    context.commit('error/setCode', response.status, { root:true })
   },
+
+  async changePlan (context, data) {
+    const response = await axios.post('/api/changePlan', data)
+
+    if(response.status === OK) {
+      context.commit('setApiStatus', true)
+      context.commit('setPaymentMethods', response.data.payment_methods)
+      context.commit('setDefaultPaymentMethod', response.data.default_payment_method)
+      context.commit('auth/setUser', response.data.user, { root:true })
+      context.commit('setSubscription', response.data.subscription || null)
+      return false
+    }
+
+    context.commit('setApiStatus', false)
+    context.commit('error/setCode', response.status, { root:true })
+  },
+
 }
 
 export default {

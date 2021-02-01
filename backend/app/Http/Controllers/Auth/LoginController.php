@@ -51,9 +51,14 @@ class LoginController extends Controller
           $default_payment_method = $user->defaultPaymentMethod()
                                           ->asStripePaymentMethod();
 
+          if($user->subscribed('default')) {
+              $subscription = $user->subscriptions->first();
+          }
+
           return [
             'user' => $user,
             'intent' => $user->createSetupIntent(),
+            'subscription' => $subscription,
             'payment_methods' => $payment_methods,
             'default_payment_method' => $default_payment_method,
           ];

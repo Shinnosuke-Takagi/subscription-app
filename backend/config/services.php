@@ -31,8 +31,8 @@ return [
     ],
 
     'stripe_plan' => [
-        'Casual Plan ￥300' => env('STRIPE_CASUAL_ID'),
-        'Standard Plan ￥500' => env('STRIPE_STANDARD_ID'),
-        'Premium Plan ￥980' => env('STRIPE_PREMIUM_ID'),
+        'Casual Plan ￥300' => env('MIX_STRIPE_CASUAL_ID'),
+        'Standard Plan ￥500' => env('MIX_STRIPE_STANDARD_ID'),
+        'Premium Plan ￥980' => env('MIX_STRIPE_PREMIUM_ID'),
     ],
 ];

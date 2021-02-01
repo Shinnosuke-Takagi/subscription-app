@@ -15,14 +15,3 @@ use Illuminate\Support\Facades\Route;
 Route::get('/{any?}', function(){
   return view('index');
 })->where('any', '.+');
-
-Auth::routes();
-
-Route::get('/home', 'HomeController@index')->name('home');
-
-Route::get('subscription', 'Subscriptions\PaymentController@index')->name('subscriptions.index');
-Route::post('subscription/subscribe', 'Subscriptions\PaymentController@subscribe')->name('subscriptions.subscribe');
-Route::post('subscription/updateCard', 'Subscriptions\PaymentController@updateCard')->name('subscriptions.updateCard');
-Route::post('subscription/changePlan', 'Subscriptions\PaymentController@changePlan')->name('subscriptions.changePlan');
-Route::post('subscription/cancel', 'Subscriptions\PaymentController@cancel')->name('subscriptions.unsubscribe');
-Route::post('subscription/resume', 'Subscriptions\PaymentController@resume')->name('subscriptions.resume');
