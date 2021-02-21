@@ -6,35 +6,22 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Arr;
+use App\Traits\UserStatusTrait;
 
 class PaymentController extends Controller
 {
+    use UserStatusTrait;
     // ユーザーのカード情報などをVueに渡す
-    public function setup() {
-        if(Auth::user()) {
-            if(Auth::user()->hasDefaultPaymentMethod()) {
-
-                if(Auth::user()->subscribed('default')) {
-                  $subscription = Auth::user()->subscriptions->first();
-                } else {
-                  $subscription = null;
-                }
-
-                // ユーザーが登録済のカードを配列で取得する
-                $payment_methods = Auth::user()->paymentMethods()
-                                                ->map(function($paymentMethod) {
-                  return $paymentMethod->asStripePaymentMethod();
-                });
-
-                // ユーザーがデフォルトに設定しているカード情報を取得する
-                $default_payment_method = Auth::user()->defaultPaymentMethod()
-                                                ->asStripePaymentMethod();
+    public function setup()
+    {
+        if (Auth::user()) {
+            if (Auth::user()->hasDefaultPaymentMethod()) {
 
                 return [
                   'intent' => Auth::user()->createSetupIntent(),
-                  'subscription' => $subscription,
-                  'payment_methods' => $payment_methods,
-                  'default_payment_method' => $default_payment_method,
+                  'subscription' => $this->getSubscription(Auth::user()),
+                  'payment_methods' => $this->getPaymentMethods(Auth::user()),
+                  'default_payment_method' => $this->getDefaultPaymentMethod(Auth::user()),
                 ];
 
             } else {
@@ -54,24 +41,12 @@ class PaymentController extends Controller
         // ユーザーが追加したカード情報を追加してデフォルトに設定する。
         $user->updateDefaultPaymentMethod($request->payment_method);
 
-        if($user->subscribed('default')) {
-            $subscription = $user->subscriptions->first();
-        }
-
-        $payment_methods = Auth::user()->paymentMethods()
-                                        ->map(function($paymentMethod) {
-          return $paymentMethod->asStripePaymentMethod();
-        });
-
-        $default_payment_method = Auth::user()->defaultPaymentMethod()
-                                        ->asStripePaymentMethod();
-
-         return [
-           'user' => $user,
-           'subscription' => $subscription,
-           'payment_methods' => $payment_methods,
-           'default_payment_method' => $default_payment_method,
-         ];
+        return [
+          'user' => $user,
+          'subscription' => $this->getSubscription($user),
+          'payment_methods' => $this->getPaymentMethods($user),
+          'default_payment_method' => $this->getDefaultPaymentMethod($user),
+        ];
     }
 
     // カード情報を変更する
@@ -87,23 +62,11 @@ class PaymentController extends Controller
         // ユーザーの追加済のカード情報を上で取得して、デフォルトに設定する
         $user->updateDefaultPaymentMethod($payment_method);
 
-        if($user->subscribed('default')) {
-            $subscription = $user->subscriptions->first();
-        }
-
-        $payment_methods = Auth::user()->paymentMethods()
-                                        ->map(function($paymentMethod) {
-          return $paymentMethod->asStripePaymentMethod();
-        });
-
-        $default_payment_method = Auth::user()->defaultPaymentMethod()
-                                        ->asStripePaymentMethod();
-
         return [
           'user' => $user,
-          'subscription' => $subscription,
-          'payment_methods' => $payment_methods,
-          'default_payment_method' => $default_payment_method,
+          'subscription' => $this->getSubscription($user),
+          'payment_methods' => $this->getPaymentMethods($user),
+          'default_payment_method' => $this->getDefaultPaymentMethod($user),
         ];
     }
 
@@ -117,23 +80,11 @@ class PaymentController extends Controller
         // ユーザーのカード情報から、$plan_idが一致するプランに加入させる
         $user->newSubscription('default', $plan_id)->add();
 
-        if($user->subscribed('default')) {
-            $subscription = $user->subscriptions->first();
-        }
-
-        $payment_methods = Auth::user()->paymentMethods()
-                                        ->map(function($paymentMethod) {
-          return $paymentMethod->asStripePaymentMethod();
-        });
-
-        $default_payment_method = Auth::user()->defaultPaymentMethod()
-                                        ->asStripePaymentMethod();
-
         return [
           'user' => $user,
-          'subscription' => $subscription,
-          'payment_methods' => $payment_methods,
-          'default_payment_method' => $default_payment_method,
+          'subscription' => $this->getSubscription($user),
+          'payment_methods' => $this->getPaymentMethods($user),
+          'default_payment_method' => $this->getDefaultPaymentMethod($user),
         ];
     }
 
@@ -147,23 +98,11 @@ class PaymentController extends Controller
         // ユーザーのカード情報から、$plan_idが一致するプランに加入させる
         $user->subscription('default')->swap($plan_id);
 
-        if($user->subscribed('default')) {
-            $subscription = $user->subscriptions->first();
-        }
-
-        $payment_methods = Auth::user()->paymentMethods()
-                                        ->map(function($paymentMethod) {
-          return $paymentMethod->asStripePaymentMethod();
-        });
-
-        $default_payment_method = Auth::user()->defaultPaymentMethod()
-                                        ->asStripePaymentMethod();
-
         return [
           'user' => $user,
-          'subscription' => $subscription,
-          'payment_methods' => $payment_methods,
-          'default_payment_method' => $default_payment_method,
+          'subscription' => $this->getSubscription($user),
+          'payment_methods' => $this->getPaymentMethods($user),
+          'default_payment_method' => $this->getDefaultPaymentMethod($user),
         ];
     }
 

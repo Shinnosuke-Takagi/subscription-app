@@ -7,6 +7,7 @@
     <div class="panel">
       <span>Select Plan</span>
       <select class="form-control mb-2" v-model="selectedPlan.plan">
+          <option value="">選択してください</option>
           <option
             v-for="plan in plans"
             :key="plan"

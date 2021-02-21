@@ -1,6 +1,9 @@
 backend/node_modules
 backend/public/hot
 backend/public/storage
+backend/public/js
+backend/public/mix-manifest.json
+backend/public/css
 backend/storage/*.key
 backend/vendor
 backend/.env
